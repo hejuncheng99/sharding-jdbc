@@ -1,0 +1,105 @@
+#数据治理
+server:
+  port: 9005
+spring:
+  shardingsphere:
+    datasource:
+      #数据源名称，多数据源以逗号隔开
+      names: ds0,ds1
+      ds0:
+        #数据库驱动类名
+        driver-class-name: com.mysql.cj.jdbc.Driver
+        #数据库连接池名称
+        type: com.alibaba.druid.pool.DruidDataSource
+        #数据库连接地址
+        url: jdbc:mysql://localhost:3306/ds0?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai
+        #数据库用户名
+        username: root
+        #数据库密码
+        password: 123456
+        #初始化连接数
+        initial-size: 10
+        #最大连接数
+        max-active: 100
+        #最小空闲时间
+        min-idle: 10
+        #最大等待时间
+        max-wait: 60000
+        #连接池准备
+        pool-prepared-statements: true
+        max-pool-prepared-statement-per-connection-size: 20
+        time-between-eviction-runs-millis: 60000
+        min-evictable-idle-time-millis: 300000
+        #Oracle需要打开注释
+        #validation-query: SELECT 1 FROM DUAL
+        test-while-idle: true
+        test-on-borrow: false
+        test-on-return: false
+        filter:
+          stat:
+            log-slow-sql: true
+            slow-sql-millis: 1000
+            merge-sql: false
+          wall:
+            config:
+              multi-statement-allow: true
+      ds1:
+        driver-class-name: com.mysql.cj.jdbc.Driver
+        password: 123456
+        type: com.alibaba.druid.pool.DruidDataSource
+        url: jdbc:mysql://localhost:3306/ds1?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai
+        username: root
+        initial-size: 10
+        max-active: 100
+        min-idle: 10
+        max-wait: 60000
+        pool-prepared-statements: true
+        max-pool-prepared-statement-per-connection-size: 20
+        time-between-eviction-runs-millis: 60000
+        min-evictable-idle-time-millis: 300000
+        #Oracle需要打开注释
+        #validation-query: SELECT 1 FROM DUAL
+        test-while-idle: true
+        test-on-borrow: false
+        test-on-return: false
+        filter:
+          stat:
+            log-slow-sql: true
+            slow-sql-millis: 1000
+            merge-sql: false
+          wall:
+            config:
+              multi-statement-allow: true
+    props:
+      sql:
+        #是否开启SQL显示，默认值: false
+        show: true
+      executor:
+        #工作线程数量，默认值: CPU核数
+        size: 10
+
+    sharding:
+      t_user:
+        #数据库策略
+        database-strategy:
+          #分片类型
+          inline:
+            #分片列
+            sharding-column: id
+        #数据库策略
+        database-strategyinline:
+          #分片算法行表达式，需符合groovy语法
+          algorithm-expression: ds$->{id % 2}
+      tables:
+        t_user:
+          actual-data-nodes: ds$->{0..1}.t_user$->{0..1}
+          table-strategy:
+            inline:
+              algorithm-expression: t_user$->{id % 2}
+              sharding-column: id
+        t_address:
+          actual-data-nodes: ds$->{0..1}.t_address_$->{0..1}
+          table-strategy:
+            inline:
+              algorithm-expression: t_address_$->{id % 2}
+              sharding-column: id

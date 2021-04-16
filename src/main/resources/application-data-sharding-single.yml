@@ -1,0 +1,93 @@
+#单库数据分片
+server:
+  port: 9003
+spring:
+  shardingsphere:
+    datasource:
+      db0:
+        #数据库驱动类名
+        driver-class-name: com.mysql.cj.jdbc.Driver
+        #数据库连接池名称
+        type: com.alibaba.druid.pool.DruidDataSource
+        #数据库连接地址
+        url: jdbc:mysql://localhost:3306/ds0?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai
+        #数据库用户名
+        username: root
+        #数据库密码
+        password: 123456
+        #初始化连接数
+        initial-size: 10
+        #最大连接数
+        max-active: 100
+        #最小空闲时间
+        min-idle: 10
+        #最大等待时间
+        max-wait: 60000
+        #连接池准备
+        pool-prepared-statements: true
+
+        max-pool-prepared-statement-per-connection-size: 20
+        time-between-eviction-runs-millis: 60000
+        min-evictable-idle-time-millis: 300000
+        #Oracle需要打开注释
+        #validation-query: SELECT 1 FROM DUAL
+        test-while-idle: true
+        test-on-borrow: false
+        test-on-return: false
+        filter:
+          stat:
+            log-slow-sql: true
+            slow-sql-millis: 1000
+            merge-sql: false
+          wall:
+            config:
+
+      names: db0
+    props:
+      sql:
+        #是否开启SQL显示，默认值: false
+        show: true
+      executor:
+        #工作线程数量，默认值: CPU核数
+        size: 10
+
+    sharding:
+#      binding-tables:
+#        - t_user0,t_user1,t_user2
+#        - warehouse_info0,warehouse_info1
+
+      tables:
+        t_user:
+          key-generator:
+            column: user_id
+            type: SNOWFLAKE
+            props:
+              max:
+                tolerate:
+                  time:
+                    difference:
+                      milliseconds: 0
+              worker:
+                id: 1
+          actual-data-nodes: db0.t_user$->{0..2} #实际数据点
+          table-strategy: # 分表策略
+            inline:
+              algorithm-expression: t_user$->{user_id % 3} #路由表达式
+              sharding-column: user_id #分片列
+        warehouse_info:
+          key-generator:
+            column: warehouse_id
+            type: SNOWFLAKE
+            props:
+              max:
+                tolerate:
+                  time:
+                    difference:
+                      milliseconds: 0
+              worker:
+                id: 1
+          actual-data-nodes: db0.warehouse_info$->{0..1} #实际数据点
+          table-strategy: # 分表策略
+            inline:
+              algorithm-expression: warehouse_info$->{warehouse_id % 2}
+              sharding-column: warehouse_id
